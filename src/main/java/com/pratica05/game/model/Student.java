@@ -1,6 +1,7 @@
 package com.pratica05.game.model;
+import com.pratica05.game.interfaces.model.StudentInterface;
 
-public class Student {
+public class Student implements StudentInterface {
     private String name;
     private boolean isActive;
     private int totalCourses;

@@ -2,9 +2,10 @@ package com.pratica05.game.service;
 
 import com.pratica05.game.model.Student;
 import org.springframework.stereotype.Service;
+import com.pratica05.game.interfaces.service.StudentServiceInterface;
 
 @Service
-public class StudentService {
+public class StudentService  implements StudentServiceInterface {
 
     // Metodo para registrar a participacao no fórum
     public void participateInForum(Student student, String comment) {

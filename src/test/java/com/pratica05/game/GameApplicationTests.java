@@ -3,6 +3,7 @@ package com.pratica05.game;
 import com.pratica05.game.controller.GameController;
 import com.pratica05.game.model.Student;
 import com.pratica05.game.service.StudentService;
+import com.pratica05.game.interfaces.GameApplicationInterface;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -15,7 +16,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.any;
 
 @SpringBootTest
-class GameApplicationTests {
+class GameApplicationTests implements GameApplicationInterface {
 
 	@Autowired
 	private StudentService studentService;
