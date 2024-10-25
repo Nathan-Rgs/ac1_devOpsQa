@@ -1,16 +1,25 @@
-package com.pratica05.game.model;
+package com.pratica05.game.entities;
 
+import com.pratica05.game.entities.vo.Address;
 import com.pratica05.game.interfaces.model.StudentInterface;
-import lombok.Getter;
-import lombok.Setter;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Getter
-@Setter
+import jakarta.persistence.*;
+import java.util.List;
+
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Entity
+@Table(name = "students")
 public class Student implements StudentInterface {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     private String name;
     private boolean isActive = false;
     private int totalCourses = 0;
@@ -21,9 +30,15 @@ public class Student implements StudentInterface {
     private double averageScore = 0.0;
     private boolean completedCourses = false;
 
+    @OneToMany(mappedBy = "student")
+    private List<Course> courses;
+
+    @Embedded
+    private Address address;  // Embedding a Value Object
+
     public Student(String name) {
         this.name = name;
-        this.isActive = false;
+        this.isActive = true;
         this.totalCourses = 0;
         this.isPremium = false;
         this.coins = 0;
@@ -32,8 +47,13 @@ public class Student implements StudentInterface {
         this.averageScore = 0.0;
         this.completedCourses = false;
     }
+    // Esse método já é gerado automaticamente pelo Lombok, devido à anotação @Data
+    public Long getId() {
+        return id;
+    }
 
-    // Implementando métodos da interface explicitamente para satisfazer o compilador
+
+    // Implementação de métodos da interface StudentInterface
     @Override
     public String getName() {
         return name;
@@ -170,5 +190,13 @@ public class Student implements StudentInterface {
         } else {
             feedback = "Your average score is below 7.0. Keep improving to unlock more courses.";
         }
+    }
+
+    public void setAddress(Address address) {
+        this.address = address;
+    }
+
+    public boolean isCompletedCourses() {
+        return completedCourses;
     }
 }
