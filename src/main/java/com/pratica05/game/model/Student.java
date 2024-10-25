@@ -1,18 +1,26 @@
 package com.pratica05.game.model;
-import com.pratica05.game.interfaces.model.StudentInterface;
 
+import com.pratica05.game.interfaces.model.StudentInterface;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Student implements StudentInterface {
     private String name;
-    private boolean isActive;
-    private int totalCourses;
-    private boolean isPremium;
-    private int coins;
-    private String feedback;
-    private String suggestion;
-    private double averageScore;  // Adicionando o atributo para a pontuação média
-    private boolean completedCourses; // Adicionando o atributo para controle de cursos completos
+    private boolean isActive = false;
+    private int totalCourses = 0;
+    private boolean isPremium = false;
+    private int coins = 0;
+    private String feedback = "";
+    private String suggestion = "";
+    private double averageScore = 0.0;
+    private boolean completedCourses = false;
 
-    // Construtor
     public Student(String name) {
         this.name = name;
         this.isActive = false;
@@ -21,138 +29,146 @@ public class Student implements StudentInterface {
         this.coins = 0;
         this.feedback = "";
         this.suggestion = "";
-        this.averageScore = 0.0;  // Inicializando a pontuação média
-        this.completedCourses = false; // Inicializando os cursos completados
+        this.averageScore = 0.0;
+        this.completedCourses = false;
     }
 
-    // Getters e Setters
-
+    // Implementando métodos da interface explicitamente para satisfazer o compilador
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public boolean isActive() {
         return isActive;
     }
 
+    @Override
     public void setActive(boolean isActive) {
         this.isActive = isActive;
     }
 
+    @Override
     public int getTotalCourses() {
         return totalCourses;
     }
 
+    @Override
     public void setTotalCourses(int totalCourses) {
         this.totalCourses = totalCourses;
     }
 
+    @Override
     public boolean isPremium() {
         return isPremium;
     }
 
+    @Override
     public void setPremium(boolean isPremium) {
         this.isPremium = isPremium;
     }
 
+    @Override
     public int getCoins() {
         return coins;
     }
 
+    @Override
     public void setCoins(int coins) {
         this.coins = coins;
     }
 
+    @Override
     public String getFeedback() {
         return feedback;
     }
 
+    @Override
     public void setFeedback(String feedback) {
         this.feedback = feedback;
     }
 
+    @Override
     public String getSuggestion() {
         return suggestion;
     }
 
+    @Override
     public void setSuggestion(String suggestion) {
         this.suggestion = suggestion;
     }
 
-    // Adicionando métodos que faltam
-    // Metodo para definir se o aluno completou cursos
-    public void setCompletedCourses(boolean completedCourses) {
-        this.completedCourses = completedCourses;
+    @Override
+    public double getAverageScore() {
+        return averageScore;
     }
 
-    public boolean hasCompletedCourses() {
-        return this.completedCourses;
-    }
-
-    // Metodo para definir a pontuação média do aluno
+    @Override
     public void setAverageScore(double averageScore) {
         this.averageScore = averageScore;
     }
 
-    // Metodo para recuperar a pontuação média do aluno
-    public double getAverageScore() {
-        return this.averageScore;
+    @Override
+    public boolean hasCompletedCourses() {
+        return completedCourses;
     }
 
-    // Metodos de ação
-
-    // Participação no fórum
-    public void participateInForum(String comment) {
-        if (this.isActive) {
-            this.feedback = "Good contribution! Keep helping others.";
-            this.suggestion = "Try to engage more with new members.";
-        } else {
-            this.feedback = "You need to be active to participate in the forum.";
-        }
+    @Override
+    public void setCompletedCourses(boolean completedCourses) {
+        this.completedCourses = completedCourses;
     }
 
-    // Receber moedas
-    public void receiveCoins(int numberOfCoins) {
-        this.coins += numberOfCoins;
-    }
-
-    // Gastar moedas
-    public void useCoins(int numberOfCoins) {
-        if (this.coins >= numberOfCoins) {
-            this.coins -= numberOfCoins;
-        } else {
-            this.feedback = "Not enough coins.";
-        }
-    }
-
-    // Sugestão de novos cursos baseada nas moedas restantes
+    @Override
     public String getSuggestedCourses() {
-        if (this.coins > 0) {
-            return "You have " + this.coins + " coin(s) left. Here are new courses you can enroll in.";
+        return coins > 0
+                ? "You have " + coins + " coin(s) left. Here are new courses you can enroll in."
+                : "You have no coins left. Please earn more coins to unlock new courses.";
+    }
+
+    @Override
+    public void participateInForum(String comment) {
+        if (isActive) {
+            feedback = "Good contribution! Keep helping others.";
+            suggestion = "Try to engage more with new members.";
         } else {
-            return "You have no coins left. Please earn more coins to unlock new courses.";
+            feedback = "You need to be active to participate in the forum.";
         }
     }
 
-    // Atualizar status de Premium
+    @Override
+    public void receiveCoins(int numberOfCoins) {
+        coins += numberOfCoins;
+    }
+
+    @Override
+    public void useCoins(int numberOfCoins) {
+        if (coins >= numberOfCoins) {
+            coins -= numberOfCoins;
+        } else {
+            feedback = "Not enough coins.";
+        }
+    }
+
+    @Override
     public void checkIfPremium() {
-        if (this.totalCourses >= 12) {
-            this.isPremium = true;
+        if (totalCourses >= 12) {
+            isPremium = true;
         }
     }
 
-    // Completar curso e verificar se o aluno se torna Premium
+    @Override
     public void completeCourse(double averageScore) {
-        this.averageScore = averageScore; // Atualiza a pontuação média do aluno
+        this.averageScore = averageScore;
         if (averageScore >= 7.0) {
-            this.totalCourses += 3; // O aluno ganha mais 3 cursos se a média for maior que 7
-            checkIfPremium(); // Verifica se o aluno se tornou premium
-            this.feedback = "Great job! You've earned 3 more courses.";
-            if (this.isPremium) {
-                this.feedback += " You've been upgraded to Premium!";
+            totalCourses += 3;
+            checkIfPremium();
+            feedback = "Great job! You've earned 3 more courses.";
+            if (isPremium) {
+                feedback += " You've been upgraded to Premium!";
             }
         } else {
-            this.feedback = "Your average score is below 7.0. Keep improving to unlock more courses.";
+            feedback = "Your average score is below 7.0. Keep improving to unlock more courses.";
         }
     }
 }
