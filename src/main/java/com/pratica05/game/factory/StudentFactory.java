@@ -1,6 +1,6 @@
 package com.pratica05.game.factory;
 
-import com.pratica05.game.model.Student;
+import com.pratica05.game.entities.Student;
 
 public class StudentFactory {
 
