@@ -1,13 +1,12 @@
 package com.pratica05.game.interfaces.service;
-import com.pratica05.game.model.Student;
 
 public interface StudentServiceInterface {
-    public void participateInForum(Student student, String comment);
-    public void calculateAchievements(Student student, int points);
-    public void completeCourse(Student student, double averageScore);
-    public void upgradeToPremium(Student student);
-    public void useCoins(Student student, int numberOfCoins);
-    public String suggestCourses(Student student);
-    public String checkStatusAndSuggestCourses(Student student);
-    public void addCoins(Student student, int coins);
+    void participateInForum(Long studentId, String comment);
+    void calculateAchievements(Long studentId, int points);
+    void completeCourse(Long studentId, double averageScore);
+    void upgradeToPremium(Long studentId);
+    void useCoins(Long studentId, int numberOfCoins);
+    String suggestCourses(Long studentId);
+    String checkStatusAndSuggestCourses(Long studentId);
+    void addCoins(Long studentId, int coins);
 }

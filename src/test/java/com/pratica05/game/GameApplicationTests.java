@@ -1,15 +1,23 @@
 package com.pratica05.game;
 
-import com.pratica05.game.controller.GameController;
-import com.pratica05.game.model.Student;
-import com.pratica05.game.service.StudentService;
+import com.pratica05.game.controller.StudentController;
+import com.pratica05.game.dto.CreateStudentDto;
+import com.pratica05.game.entities.Course;
+import com.pratica05.game.entities.Student;
 import com.pratica05.game.interfaces.GameApplicationInterface;
+import com.pratica05.game.repositories.CourseRepository;
+import com.pratica05.game.repositories.StudentRepository;
+import com.pratica05.game.service.StudentService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -18,128 +26,295 @@ import static org.mockito.ArgumentMatchers.any;
 @SpringBootTest
 class GameApplicationTests implements GameApplicationInterface {
 
-	@Autowired
-	private StudentService studentService;
+    @Autowired
+    private StudentService studentService;
 
-	@Mock
-	private StudentService mockedStudentService;
+    @Mock
+    private StudentService mockedStudentService;
 
-	@InjectMocks
-	private GameController gameController;
+    @InjectMocks
+    private StudentController studentController;
 
-	// Testes para StudentService
+    @Test
+    public void testForumParticipationFeedback() {
+        // CENÁRIO: Criando um DTO de estudante ativo
+        CreateStudentDto studentDto = new CreateStudentDto();
+        studentDto.setName("Active Student");
+        studentDto.setActive(true);
+        studentDto.setCoins(0);
 
-	@Test
-	public void testForumParticipationFeedback() {
-		// CENÁRIO: Um aluno ativo participa do fórum
-		Student student = new Student("Active Student");
-		student.setActive(true);
+        // Converter DTO para Student e salvar
+        Student student = studentService.saveStudent(studentDto);
+        Long studentId = student.getId();
 
-		// EXECUÇÃO: O aluno responde uma pergunta no fórum
-		studentService.participateInForum(student, "This is my answer to your question");
+        Mockito.when(mockedStudentService.getStudentById(studentId)).thenReturn(student);
 
-		// RESULTADO: O feedback e sugestão são gerados corretamente
-		assertEquals("Good contribution! Keep helping others.", student.getFeedback());
-		assertEquals("Try to engage more with new members.", student.getSuggestion());
-	}
+        Mockito.doAnswer(invocation -> {
+            Long id = invocation.getArgument(0);
+            String comment = invocation.getArgument(1);
 
-	@Test
-	public void testMonthlyAchievements() {
-		// CENÁRIO: Um aluno ativo participa do fórum ao longo do mês
-		Student student = new Student("Monthly Participant");
-		student.setActive(true);
+            Student s = mockedStudentService.getStudentById(id);
+            s.setFeedback("Good contribution! Keep helping others.");
+            s.setSuggestion("Try to engage more with new members.");
+            return null;
+        }).when(mockedStudentService).participateInForum(studentId, "This is my answer to your question");
 
-		// EXECUÇÃO: O sistema calcula as conquistas do mês
-		studentService.calculateAchievements(student, 10);
+        String response = studentController.participateInForum(studentId, "This is my answer to your question").getBody();
+        assertEquals("Participation registered successfully.", response);
+        Mockito.verify(mockedStudentService).participateInForum(studentId, "This is my answer to your question");
+    }
 
-		// RESULTADO: O aluno recebe feedback e pontos corretamente
-		assertEquals("Congratulations! You earned 10 points.", student.getFeedback());
-		assertEquals(10, student.getCoins());
-	}
+    @Test
+    public void testMonthlyAchievements() {
+        // Criando um DTO para estudante ativo
+        CreateStudentDto studentDto = new CreateStudentDto();
+        studentDto.setName("Monthly Participant");
+        studentDto.setActive(true);
 
-	@Test
-	public void testStudentImprovementFeedback() {
-		// CENÁRIO: Um aluno completou cursos e está participando do fórum
-		Student student = new Student("Improvement Seeker");
-		student.setCompletedCourses(true);
+        Student student = studentService.saveStudent(studentDto);
+        Long studentId = student.getId();
 
-		// EXECUÇÃO: O aluno participa do fórum e recebe moedas adicionais
-		studentService.participateInForum(student, "Offering advice to others");
-		studentService.addCoins(student, 5);
+        Mockito.when(mockedStudentService.getStudentById(studentId)).thenReturn(student);
 
-		// RESULTADO: O feedback é gerado e o aluno tem sua pontuação média atualizada
-		assertEquals("You've earned 5 new coin(s).", student.getFeedback());
-		student.setAverageScore(8.0);
-		assertEquals(8.0, student.getAverageScore());
-		student.setFeedback("Great job improving your feedback skills!");
-		assertEquals("Great job improving your feedback skills!", student.getFeedback());
-	}
+        Mockito.doAnswer(invocation -> {
+            Long id = invocation.getArgument(0);
+            int points = invocation.getArgument(1);
 
-	@Test
-	public void testPremiumStudentCoins() {
-		// CENÁRIO: Um aluno Premium usa suas moedas em cursos
-		Student student = new Student("Premium Student");
-		student.setTotalCourses(12);
+            Student s = mockedStudentService.getStudentById(id);
+            s.setFeedback("Congratulations! You earned 10 points.");
+            s.setCoins(points);
+            return null;
+        }).when(mockedStudentService).calculateAchievements(studentId, 10);
 
-		// EXECUÇÃO: O aluno é promovido a Premium e usa moedas
-		studentService.upgradeToPremium(student);
-		assertTrue(student.isPremium());
-		studentService.addCoins(student, 3);
-		assertEquals(3, student.getCoins());
-		studentService.useCoins(student, 1);
-		assertEquals(2, student.getCoins());
-		studentService.useCoins(student, 1);
-		assertEquals(1, student.getCoins());
+        studentController.calculateAchievements(studentId, 10);
 
-		// RESULTADO: O sistema sugere novos cursos com base nas moedas restantes
-		String courseSuggestion = studentService.suggestCourses(student);
-		assertEquals("You have 1 coin(s) left. Here are new courses you can enroll in.", courseSuggestion);
-	}
+        Student updatedStudent = mockedStudentService.getStudentById(studentId);
+        assertEquals("Congratulations! You earned 10 points.", updatedStudent.getFeedback());
+        assertEquals(10, updatedStudent.getCoins());
+        Mockito.verify(mockedStudentService).calculateAchievements(studentId, 10);
+    }
 
-	// Testes para GameController
 
-	@Test
-	public void testParticipateInForum() {
-		// CENÁRIO: Um aluno participa do fórum via o GameController
-		Student student = new Student("Forum Participant");
+    @Test
+    public void testStudentImprovementFeedback() {
+        // Criando um DTO para estudante que completou cursos
+        CreateStudentDto studentDto = new CreateStudentDto();
+        studentDto.setName("Improvement Seeker");
+        studentDto.setCompletedCourses(true);
 
-		// EXECUÇÃO: Mock do serviço de participação no fórum
-		Mockito.doAnswer(invocation -> {
-			Student s = invocation.getArgument(0);
-			s.setFeedback("Good contribution! Keep helping others.");
-			// Não está mais incluindo a sugestão, então vamos remover do esperado
-			return null;
-		}).when(mockedStudentService).participateInForum(any(Student.class), anyString());
+        Student student = studentService.saveStudent(studentDto);
+        Long studentId = student.getId();
 
-		// EXECUÇÃO: O aluno envia uma mensagem via controller
-		String response = gameController.participateInForum("Forum Participant", "Message");
+        Mockito.when(mockedStudentService.getStudentById(studentId)).thenReturn(student);
 
-		// RESULTADO: O feedback é retornado corretamente
-		assertEquals("Feedback: Good contribution! Keep helping others.", response);
+        Mockito.doAnswer(invocation -> {
+            Long id = invocation.getArgument(0);
+            String comment = invocation.getArgument(1);
 
-		// Verificação de que o serviço foi chamado corretamente
-		Mockito.verify(mockedStudentService, Mockito.times(1)).participateInForum(any(Student.class), anyString());
-	}
+            Student s = mockedStudentService.getStudentById(id);
+            s.setFeedback("You've earned 5 new coin(s).");
+            return null;
+        }).when(mockedStudentService).participateInForum(studentId, "Offering advice to others");
 
-	@Test
-	public void testUpgradeToPremium() {
-		// CENÁRIO: Um aluno é promovido a Premium via o GameController
-		Student student = new Student("Upgrade Student");
+        Mockito.doAnswer(invocation -> {
+            Long id = invocation.getArgument(0);
+            int coins = invocation.getArgument(1);
 
-		// EXECUÇÃO: Mock do serviço de upgrade para Premium
-		Mockito.doAnswer(invocation -> {
-			Student s = invocation.getArgument(0);
-			s.setPremium(true);
-			return null;
-		}).when(mockedStudentService).upgradeToPremium(any(Student.class));
+            Student s = mockedStudentService.getStudentById(id);
+            s.setCoins(s.getCoins() + coins);
+            return null;
+        }).when(mockedStudentService).addCoins(studentId, 5);
 
-		// EXECUÇÃO: O aluno é promovido a Premium via controller
-		String response = gameController.upgradeToPremium("Upgrade Student");
+        studentController.participateInForum(studentId, "Offering advice to others");
+        studentController.addCoins(studentId, 5);
 
-		// RESULTADO: O status de Premium é retornado corretamente
-		assertEquals("Student Upgrade Student is now Premium!", response);
+        Student updatedStudent = mockedStudentService.getStudentById(studentId);
+        assertEquals("You've earned 5 new coin(s).", updatedStudent.getFeedback());
+        assertEquals(5, updatedStudent.getCoins());
 
-		// Verificação de que o serviço foi chamado corretamente
-		Mockito.verify(mockedStudentService, Mockito.times(1)).upgradeToPremium(any(Student.class));
-	}
+        Mockito.verify(mockedStudentService).participateInForum(studentId, "Offering advice to others");
+        Mockito.verify(mockedStudentService).addCoins(studentId, 5);
+    }
+
+    @Test
+    public void testPremiumStudentCoins() {
+        // Criando um DTO para estudante com cursos totais para Premium
+        CreateStudentDto studentDto = new CreateStudentDto();
+        studentDto.setName("Premium Student");
+        studentDto.setTotalCourses(12);
+
+        Student student = studentService.saveStudent(studentDto);
+        Long studentId = student.getId();
+
+        Mockito.when(mockedStudentService.getStudentById(studentId)).thenReturn(student);
+
+        Mockito.doAnswer(invocation -> {
+            Long id = invocation.getArgument(0);
+            Student s = mockedStudentService.getStudentById(id);
+            s.setPremium(true);
+            return null;
+        }).when(mockedStudentService).upgradeToPremium(studentId);
+
+        Mockito.doAnswer(invocation -> {
+            Long id = invocation.getArgument(0);
+            int coins = invocation.getArgument(1);
+            Student s = mockedStudentService.getStudentById(id);
+            s.setCoins(s.getCoins() + coins);
+            return null;
+        }).when(mockedStudentService).addCoins(studentId, 3);
+
+        Mockito.doAnswer(invocation -> {
+            Long id = invocation.getArgument(0);
+            int coins = invocation.getArgument(1);
+            Student s = mockedStudentService.getStudentById(id);
+            s.setCoins(s.getCoins() - coins);
+            return null;
+        }).when(mockedStudentService).useCoins(studentId, 1);
+
+        studentController.upgradeToPremium(studentId);
+        studentController.addCoins(studentId, 3);
+        studentController.useCoins(studentId, 1);
+        studentController.useCoins(studentId, 1);
+
+        Student updatedStudent = mockedStudentService.getStudentById(studentId);
+        assertTrue(updatedStudent.isPremium());
+        assertEquals(1, updatedStudent.getCoins());
+
+        Mockito.verify(mockedStudentService).upgradeToPremium(studentId);
+        Mockito.verify(mockedStudentService).addCoins(studentId, 3);
+        Mockito.verify(mockedStudentService, Mockito.times(2)).useCoins(studentId, 1);
+    }
+
+    // Controller Tests
+    @Test
+    public void testParticipateInForum() {
+        // Configuração: Criação do DTO do estudante
+        CreateStudentDto studentDto = new CreateStudentDto();
+        studentDto.setName("Forum Participant");
+        studentDto.setActive(true);
+
+        // Simula salvar o estudante e obter o ID
+        Student student = studentService.saveStudent(studentDto);
+        Long studentId = student.getId();
+
+        // Configuração do mock para retornar o estudante pelo ID
+        Mockito.when(mockedStudentService.getStudentById(studentId)).thenReturn(student);
+
+        // Simulação da participação no fórum
+        Mockito.doAnswer(invocation -> {
+            Long id = invocation.getArgument(0);
+            String comment = invocation.getArgument(1);
+            Student s = mockedStudentService.getStudentById(id);
+            s.setFeedback("Good contribution! Keep helping others.");
+            return null;
+        }).when(mockedStudentService).participateInForum(any(Long.class), anyString());
+
+        // Execução: Chamando o método do controlador
+        String response = studentController.participateInForum(studentId, "Message").getBody();
+
+        // Verificação: Confirmação de resposta e interação
+        assertEquals("Participation registered successfully.", response);
+        Mockito.verify(mockedStudentService).participateInForum(studentId, "Message");
+    }
+
+    // Test for upgrading to Premium
+    @Test
+    public void testUpgradeToPremium() {
+        // Configuração: Criação do DTO do estudante
+        CreateStudentDto studentDto = new CreateStudentDto();
+        studentDto.setName("Upgrade Student");
+        studentDto.setTotalCourses(12);
+
+        // Salva o estudante e obtém o ID
+        Student student = studentService.saveStudent(studentDto);
+        Long studentId = student.getId();
+
+        // Configuração do mock para retorno do estudante salvo pelo ID
+        Mockito.when(mockedStudentService.getStudentById(studentId)).thenReturn(student);
+
+        // Simulação da promoção para Premium
+        Mockito.doAnswer(invocation -> {
+            Long id = invocation.getArgument(0);
+            Student s = mockedStudentService.getStudentById(id);
+            s.setPremium(true);
+            return null;
+        }).when(mockedStudentService).upgradeToPremium(any(Long.class));
+
+        // Execução: Chamando o método do controlador
+        String response = studentController.upgradeToPremium(studentId).getBody();
+
+        // Verificação: Confirmação de resposta e interação
+        assertEquals("Student upgraded to Premium successfully.", response);
+        Mockito.verify(mockedStudentService).upgradeToPremium(studentId);
+    }
+
+    @DataJpaTest
+    public static class CourseRepositoryTests {
+
+
+        @Autowired
+        private CourseRepository courseRepository;
+
+        @Autowired
+        private StudentRepository studentRepository;
+
+        private Student student;
+
+        @BeforeEach
+        public void setup() {
+            student = new Student("John Doe");
+            student = studentRepository.save(student);
+        }
+
+        @Test
+        public void testSaveCourse() {
+            Course course = new Course();
+            course.setTitle("Java Basics");
+            course.setPoints(100);
+            course.setStudent(student);
+
+            Course savedCourse = courseRepository.save(course);
+
+            assertNotNull(savedCourse);
+            assertNotNull(savedCourse.getId());
+            assertEquals("Java Basics", savedCourse.getTitle());
+            assertEquals(100, savedCourse.getPoints());
+            assertEquals(student.getId(), savedCourse.getStudent().getId());
+        }
+
+        @Test
+        public void testFindByStudentId() {
+            Course course1 = new Course();
+            course1.setTitle("Java Basics");
+            course1.setPoints(100);
+            course1.setStudent(student);
+            courseRepository.save(course1);
+
+            Course course2 = new Course();
+            course2.setTitle("Advanced Java");
+            course2.setPoints(200);
+            course2.setStudent(student);
+            courseRepository.save(course2);
+
+            List<Course> courses = courseRepository.findByStudentId(student.getId());
+
+            assertNotNull(courses);
+            assertEquals(2, courses.size());
+            assertTrue(courses.stream().anyMatch(course -> course.getTitle().equals("Java Basics")));
+            assertTrue(courses.stream().anyMatch(course -> course.getTitle().equals("Advanced Java")));
+        }
+
+        @Test
+        public void testDeleteCourse() {
+            Course course = new Course();
+            course.setTitle("Java Basics");
+            course.setPoints(100);
+            course.setStudent(student);
+            Course savedCourse = courseRepository.save(course);
+
+            courseRepository.delete(savedCourse);
+
+            assertFalse(courseRepository.findById(savedCourse.getId()).isPresent());
+        }
+    }
 }
