@@ -1,0 +1,22 @@
+version: '3'
+
+services:
+  database:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: papi
+    volumes:
+      - db-volume:/var/lib/postgresql/data
+
+  api:
+    image: nathanrgs/school-game
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_HOST: database
+    ports:
+      - "8484:8484"
+    depends_on:
+      - database
+volumes:
+  db-volume:
