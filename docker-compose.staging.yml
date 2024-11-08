@@ -5,15 +5,19 @@ services:
     image: postgres
     environment:
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: papi
+      POSTGRES_DB: sapi
     volumes:
       - db-volume:/var/lib/postgresql/data
 
   api:
     image: nathanrgs/school-game
     environment:
+      SPRING_PROFILES_ACTIVE: staging
       DB_HOST: database
     ports:
-      - "9090:9090"
+      - "8484:8484"
+    depends_on:
+      - database
+
 volumes:
   db-volume:
