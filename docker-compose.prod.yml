@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 services:
   database:
@@ -8,15 +8,35 @@ services:
       POSTGRES_DB: papi
     volumes:
       - db-volume:/var/lib/postgresql/data
+    networks:
+      - jenkins_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   api:
-    image: nathanrgs/school-game
+    image: nathanrgs/praticando-api
     environment:
       SPRING_PROFILES_ACTIVE: prod
       DB_HOST: database
     ports:
-      - "8484:8484"
+      - "8585:8585"
     depends_on:
-      - database
+      database:
+        condition: service_healthy
+    networks:
+      - jenkins_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8585/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 volumes:
   db-volume:
+
+networks:
+  jenkins_network:
+    external: true
