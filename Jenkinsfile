@@ -1,32 +1,53 @@
 pipeline {
   agent any
   stages {
-    stage("verify tooling") {
+    stage("Verify Tooling") {
       steps {
-        bat '''
+        sh '''
           docker version
           docker info
-          docker compose version
+          docker-compose version
           curl --version
           '''
       }
     }
-    stage('Prune Docker data') {
+    stage('Prune Docker Data') {
       steps {
-        bat 'docker system prune -a --volumes -f'
+        sh 'docker system prune -a --volumes -f'
       }
     }
-    stage('Start container') {
+    stage('Start Containers') {
       steps {
-        bat 'docker-compose -f docker-compose.prod.yml up -d --no-color --wait'
-        bat 'docker compose ps'
+        sh 'docker-compose -f docker-compose.prod.yml up -d --no-color'
+        sh 'docker-compose -f docker-compose.prod.yml ps'
       }
     }
-    stage('Run tests against the container') {
+    stage('Wait for API to be Ready') {
       steps {
-        bat 'curl http://localhost:8585'
+        script {
+          def maxRetries = 20
+          def retryCount = 0
+          while (retryCount < maxRetries) {
+            def result = sh(script: 'docker-compose -f docker-compose.prod.yml ps | grep "Up (healthy)" | grep "api"', returnStatus: true)
+            if (result == 0) {
+              echo "API is ready!"
+              break
+            } else {
+              echo "Waiting for API to be healthy... (Attempt ${retryCount + 1} of ${maxRetries})"
+              sleep 5
+              retryCount++
+            }
+          }
+          if (retryCount == maxRetries) {
+            error("API did not become healthy in time.")
+          }
+        }
+      }
+    }
+    stage('Run Tests Against the Container') {
+      steps {
+        sh 'curl http://api:8585'
       }
     }
   }
-
 }
