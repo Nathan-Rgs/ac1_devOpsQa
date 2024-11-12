@@ -46,7 +46,7 @@ pipeline {
     }
     stage('Run Tests Against the Container') {
       steps {
-        sh 'curl http://api:8585'
+        sh 'curl http://api:8686'
       }
     }
   }
