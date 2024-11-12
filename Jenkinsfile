@@ -18,7 +18,7 @@ pipeline {
     }
     stage('Start Containers') {
       steps {
-        sh 'docker-compose -f docker-compose.prod.yml up -d --no-color'
+        sh 'docker-compose -f docker-compose.prod.yml up -d --force-recreate --no-color'
         sh 'docker-compose -f docker-compose.prod.yml ps'
       }
     }
