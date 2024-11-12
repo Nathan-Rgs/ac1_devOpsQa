@@ -22,7 +22,7 @@ services:
       SPRING_PROFILES_ACTIVE: prod
       DB_HOST: database
     ports:
-      - "8585:8585"
+      - "8686:8585"
     depends_on:
       database:
         condition: service_healthy

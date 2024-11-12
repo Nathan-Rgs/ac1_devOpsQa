@@ -18,8 +18,8 @@ pipeline {
     }
     stage('Start Containers') {
       steps {
-        sh 'docker-compose -f docker-compose.prod.yml up -d --no-color'
-        sh 'docker-compose -f docker-compose.prod.yml ps'
+        sh 'docker-compose -f docker-compose.staging.yml up -d --no-color'
+        sh 'docker-compose -f docker-compose.staging.yml ps'
       }
     }
     stage('Wait for API to be Ready') {
@@ -28,7 +28,7 @@ pipeline {
           def maxRetries = 20
           def retryCount = 0
           while (retryCount < maxRetries) {
-            def result = sh(script: 'docker-compose -f docker-compose.prod.yml ps | grep "Up (healthy)" | grep "api"', returnStatus: true)
+            def result = sh(script: 'docker-compose -f docker-compose.staging.yml ps | grep "Up (healthy)" | grep "api"', returnStatus: true)
             if (result == 0) {
               echo "API is ready!"
               break
